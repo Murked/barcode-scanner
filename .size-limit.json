@@ -1,0 +1,32 @@
+[
+  {
+    "name": "core (createScanner + urlLookup)",
+    "path": "dist/index.js",
+    "import": "{ createScanner, urlLookup }",
+    "ignore": ["barcode-detector"],
+    "gzip": true,
+    "limit": "5 KB"
+  },
+  {
+    "name": "element (incl. core)",
+    "path": "dist/element/index.js",
+    "ignore": ["barcode-detector"],
+    "gzip": true,
+    "limit": "9 KB"
+  },
+  {
+    "name": "react hook (wrapper only, excl. shared core chunk)",
+    "path": "dist/react/index.js",
+    "rolldown": false,
+    "gzip": true,
+    "limit": "1 KB"
+  },
+  {
+    "name": "react (incl. core)",
+    "path": "dist/react/index.js",
+    "import": "{ useBarcodeScanner }",
+    "ignore": ["react", "barcode-detector"],
+    "gzip": true,
+    "limit": "4 KB"
+  }
+]

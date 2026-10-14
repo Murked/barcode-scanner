@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Headless — @yourbrand/scanner</title>
+  <link rel="stylesheet" href="/examples/assets/examples.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "@yourbrand/scanner": "/dist/index.js",
+        "barcode-detector/ponyfill": "/node_modules/barcode-detector/dist/es/ponyfill.js"
+      }
+    }
+  </script>
+  <style>
+    #cam { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #000; border-radius: 8px; }
+    form { display: grid; gap: .5rem; margin-top: 1rem; }
+    input { font: inherit; padding: .5rem; }
+    button { font: inherit; padding: .5rem 1rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Headless core (scan-only)</h1>
+    <p>Your markup, our logic: scan a code into a form field. No lookup, no default UI.</p>
+
+    <video id="cam" muted playsinline></video>
+    <form>
+      <button type="button" id="scan">Scan SKU</button>
+      <label>SKU <input id="sku" name="sku" autocomplete="off"></label>
+      <output id="status" aria-live="polite"></output>
+    </form>
+  </main>
+
+  <script type="module">
+    import { createScanner } from '@yourbrand/scanner';
+
+    const errorText = {
+      'permission-denied': 'Camera permission was denied.',
+      'insecure-context': 'Camera access needs HTTPS.',
+      'no-camera': 'No camera found.',
+    };
+    const status = document.querySelector('#status');
+
+    const scanner = createScanner({
+      video: document.querySelector('#cam'),
+      mode: 'single', // pause after the first confirmed read
+      formats: ['ean_13', 'upc_a', 'qr_code'],
+      wasmUrl: '/node_modules/zxing-wasm/dist/reader/zxing_reader.wasm',
+    });
+
+    scanner.on('state', (s) => { status.textContent = s; });
+    scanner.on('detect', ({ value }) => {
+      document.querySelector('#sku').value = value; // e.g. fill a form field
+    });
+    scanner.on('error', ({ code }) => { status.textContent = errorText[code] ?? code; });
+
+    document.querySelector('#scan').onclick = () => scanner.start();
+    window.scanner = scanner; // for poking around in devtools
+  </script>
+</body>
+</html>

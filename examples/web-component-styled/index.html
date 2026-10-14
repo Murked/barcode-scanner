@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Themed web component — @yourbrand/scanner</title>
+  <link rel="stylesheet" href="/examples/assets/examples.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "@yourbrand/scanner": "/dist/index.js",
+        "@yourbrand/scanner/element": "/dist/element/index.js",
+        "barcode-detector/ponyfill": "/node_modules/barcode-detector/dist/es/ponyfill.js"
+      }
+    }
+  </script>
+  <style>
+    /* Level 1 — custom properties */
+    barcode-scanner {
+      --bs-accent: #0f766e;
+      --bs-radius: 20px;
+      --bs-aspect: 1 / 1;
+      --bs-font: ui-rounded, system-ui, sans-serif;
+      max-width: 22rem;
+    }
+    /* Level 2 — ::part() */
+    barcode-scanner::part(reticle) { inset: 35% 10%; border-style: dashed; }
+    barcode-scanner::part(status) { text-align: center; font-size: .875rem; }
+    barcode-scanner::part(start-button) { width: 100%; text-transform: uppercase; letter-spacing: .05em; }
+    barcode-scanner::part(controls) { justify-content: center; }
+    /* Reflected state attribute */
+    barcode-scanner[state="scanning"]::part(viewfinder) { box-shadow: 0 0 0 3px #0f766e; }
+
+    /* Level 3 — slotted content is styled from the page */
+    .my-placeholder { font-size: 1.1rem; opacity: .85; }
+    .my-card { display: grid; grid-template-columns: 56px 1fr; gap: .75rem; align-items: center;
+      background: #ecfdf5; border-radius: 16px; padding: .75rem; width: 100%; }
+    .my-card img { width: 56px; height: 56px; }
+    .my-card h3 { margin: 0; font-size: 1rem; }
+    .my-card button { grid-column: 1 / -1; background: #0f766e; color: #fff; border: 0;
+      border-radius: 999px; padding: .5rem 1rem; font: inherit; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Themed &lt;barcode-scanner&gt;</h1>
+    <p>Custom properties, <code>::part()</code>, slots and <code>messages</code> combined.</p>
+
+    <barcode-scanner lookup-url="/api/lookup/{barcode}" wasm-url="/node_modules/zxing-wasm/dist/reader/zxing_reader.wasm">
+      <div slot="idle" class="my-placeholder">Tap “Scan” to start</div>
+
+      <div slot="result" class="my-card">
+        <img id="p-img" alt="">
+        <div>
+          <h3 id="p-name"></h3>
+          <small id="p-brand"></small>
+        </div>
+        <button type="button" id="again">Scan another</button>
+      </div>
+    </barcode-scanner>
+  </main>
+
+  <script type="module">
+    import '@yourbrand/scanner/element';
+
+    const el = document.querySelector('barcode-scanner');
+    // Level 4 — wording / i18n (partial; nested keys merge)
+    el.messages = {
+      start: 'Scan',
+      state: { scanning: 'Hold the barcode inside the frame.' },
+      errors: { 'permission-denied': 'We need your camera to scan. Check your browser settings.' },
+    };
+
+    el.addEventListener('barcode-product', ({ detail }) => {
+      document.getElementById('p-img').src = detail.product.imageUrl ?? '';
+      document.getElementById('p-name').textContent = detail.product.name;
+      document.getElementById('p-brand').textContent = detail.product.brand ?? '';
+    });
+    document.getElementById('again').addEventListener('click', () => el.start());
+  </script>
+</body>
+</html>

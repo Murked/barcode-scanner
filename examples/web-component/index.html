@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Web component — @yourbrand/scanner</title>
+  <link rel="stylesheet" href="/examples/assets/examples.css">
+  <!-- No bundler here, so an import map points the package names at the built files.
+       With a bundler you just `import '@yourbrand/scanner/element'`. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "@yourbrand/scanner": "/dist/index.js",
+        "@yourbrand/scanner/element": "/dist/element/index.js",
+        "barcode-detector/ponyfill": "/node_modules/barcode-detector/dist/es/ponyfill.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main>
+    <h1>&lt;barcode-scanner&gt;</h1>
+    <p>Default UI with a proxy lookup and manual entry. Try <code>5012345678900</code>.</p>
+
+    <!-- wasm-url self-hosts the zxing wasm; omit it to use the jsDelivr CDN default. -->
+    <barcode-scanner
+      lookup-url="/api/lookup/{barcode}"
+      mode="continuous"
+      manual-entry
+      wasm-url="/node_modules/zxing-wasm/dist/reader/zxing_reader.wasm"
+    ></barcode-scanner>
+
+    <h2>Events</h2>
+    <pre id="log"></pre>
+  </main>
+
+  <script type="module">
+    import '@yourbrand/scanner/element';
+
+    const el = document.querySelector('barcode-scanner');
+    const log = (line) => { document.getElementById('log').textContent += line + '\n'; };
+
+    el.addEventListener('barcode-state', (e) => log(`state     ${e.detail.state}`));
+    el.addEventListener('barcode-detect', (e) => log(`detect    ${e.detail.value} (${e.detail.format})`));
+    el.addEventListener('barcode-product', (e) => log(`product   ${e.detail.product.name}`));
+    el.addEventListener('barcode-not-found', (e) => log(`not-found ${e.detail.code.value}`));
+    el.addEventListener('barcode-error', (e) => log(`error     ${e.detail.code}`));
+  </script>
+</body>
+</html>

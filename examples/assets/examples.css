@@ -1,0 +1,7 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; line-height: 1.5; }
+body { margin: 0; background: #f8fafc; color: #0f172a; }
+main { max-width: 34rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+h1 { font-size: 1.4rem; margin: 0 0 .5rem; }
+code { background: #e2e8f0; padding: .1em .35em; border-radius: 4px; font-size: .9em; }
+pre { background: #0f172a; color: #e2e8f0; padding: .75rem; border-radius: 8px; overflow: auto; font-size: .8rem; min-height: 3em; }
+a { color: #2563eb; }
