@@ -16,16 +16,18 @@ const errorText: Record<ScannerErrorCode, string> = {
   'lookup-failed': 'Lookup failed, try again.',
   'rate-limited': 'Slow down a little.',
   unauthorized: 'Lookup is not available.',
+  'origin-not-allowed': 'Add this domain to your publishable key.',
   'quota-exceeded': 'Lookup is not available.',
 };
 
-const token = import.meta.env.VITE_BARCODES_TOKEN as string | undefined;
+// A publishable key (pk_…) from https://barcodes.gg/dashboard/tokens, e.g. in .env.local.
+const publishableKey = import.meta.env.VITE_BARCODES_PUBLISHABLE_KEY as string | undefined;
 
 export function App() {
   const [manual, setManual] = useState('');
   const { videoRef, state, code, product, notFound, error, start, stop, lookup } = useBarcodeScanner({
-    // With VITE_BARCODES_TOKEN set, look up via the Barcodes.gg API; otherwise via your own backend.
-    lookup: token ? barcodesLookup({ token }) : urlLookup('/api/lookup/{barcode}'),
+    // With a publishable key, look up via the Barcodes.gg API; otherwise via your own backend.
+    lookup: publishableKey ? barcodesLookup({ publishableKey }) : urlLookup('/api/lookup/{barcode}'),
     wasmUrl,
     onDetect: (c) => console.log('scanned', c.value),
   });

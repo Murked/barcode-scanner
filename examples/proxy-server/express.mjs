@@ -1,5 +1,7 @@
 // Lookup proxy for `urlLookup('/api/lookup/{barcode}')` or `<barcode-scanner lookup-url="/api/lookup/{barcode}">`.
-// Your Barcodes.gg token stays on the server; the browser only sees a small product preview.
+// Uses a secret Barcodes.gg API key on the server (https://barcodes.gg/dashboard/tokens).
+// Most sites don't need this: a publishable key works straight from the browser. Use a proxy
+// when you want your own caching, logging or response shape.
 //
 //   npm install express @barcodesgg/sdk
 //   BARCODES_API_KEY=... node express.mjs

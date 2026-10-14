@@ -1,5 +1,5 @@
 export { createScanner, RETAIL_FORMATS } from './scanner';
-export { urlLookup, barcodesLookup } from './lookup';
+export { urlLookup, barcodesLookup, isPublishableKey } from './lookup';
 export { isValidGtin, expandUpcE, defaultFilter } from './validate';
 export { createReadConfirmation } from './confirm';
 export { ScannerError } from './errors';

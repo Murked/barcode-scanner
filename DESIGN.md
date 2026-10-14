@@ -1,6 +1,6 @@
 # Barcode Scanner Library — Design
 
-> **Status:** v1 implemented as `@barcodesgg/scanner`. Since this doc was written, `barcodesLookup({ token })` has been implemented against the Barcodes.gg v2 API (`GET /api/v2/barcode/lookup/{barcode}`), so lookups work with or without a token. The README is the source of truth for the current API.
+> **Status:** v1 implemented as `@barcodesgg/scanner`. Product lookup uses Barcodes.gg **publishable keys** (`pk_…`, created at https://barcodes.gg/dashboard/tokens): `barcodesLookup({ publishableKey })` / `<barcode-scanner publishable-key>` call `GET /api/v2/barcode/lookup/{barcode}` with `Authorization: Bearer pk_…`, restricted server-side to allowed domains. The README is the source of truth for the current API.
 
 A drop-in, customizable barcode scanner for websites. Works as a pure scanner (returns the scanned value) or, when a lookup is supplied, fetches product data — optionally from our Barcodes API so it stays on brand.
 

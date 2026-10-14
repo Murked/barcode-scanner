@@ -1,9 +1,9 @@
 {
   "name": "@barcodesgg/scanner",
   "version": "0.1.0",
-  "description": "Drop-in barcode scanner for websites — scan-only, or look products up with the Barcodes.gg API. Web component, React hook and headless core.",
+  "description": "Drop-in barcode scanner for websites by Barcodes.gg. Scan UPC/EAN barcodes with the camera, and look products up with a Barcodes.gg publishable key. Web component, React hook and headless core.",
   "author": "Barcodes.gg",
-  "homepage": "https://github.com/Murked/barcode-scanner#readme",
+  "homepage": "https://barcodes.gg/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Murked/barcode-scanner.git"
@@ -41,9 +41,12 @@
     "barcode",
     "barcode-scanner",
     "scanner",
-    "ean",
     "upc",
+    "ean",
     "gtin",
+    "upc-lookup",
+    "barcode-lookup",
+    "sneakers",
     "camera",
     "barcode-detector",
     "zxing",

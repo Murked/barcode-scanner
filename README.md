@@ -3,12 +3,15 @@
 [![npm](https://img.shields.io/npm/v/@barcodesgg/scanner.svg)](https://www.npmjs.com/package/@barcodesgg/scanner)
 [![license](https://img.shields.io/npm/l/@barcodesgg/scanner.svg)](LICENSE)
 
-A drop-in barcode scanner for websites, from [Barcodes.gg](https://barcodes.gg).
+A drop-in barcode scanner for websites, by [Barcodes.gg](https://barcodes.gg/), the
+[sneaker barcode API](https://barcodes.gg/) for UPC and EAN product data.
 
-Point a phone or webcam at a barcode and get the value back, or add a Barcodes.gg API
-token and get the matching product (name, brand, style code, image) too.
+Point a phone or webcam at a barcode and get the value back. Add a Barcodes.gg
+[publishable key](https://barcodes.gg/dashboard/tokens) and the scanner looks up the product
+too (name, brand, style code, image), straight from the browser with no server needed.
 
-- **Works with or without a token.** Scan-only out of the box; product lookup with a token.
+- **Works with or without a key.** Scan-only out of the box; product lookup with a
+  [Barcodes.gg publishable key](#publishable-keys).
 - **Three ways to use it:** a `<barcode-scanner>` web component with a ready-made UI, a
   React hook for your own UI, or a headless core for anything else.
 - **Fast and accurate.** Uses the browser's built-in barcode detector where available and
@@ -20,8 +23,14 @@ token and get the matching product (name, brand, style code, image) too.
   only downloads when the camera starts, and only in browsers that need it.
 - **Fully typed.** Written in TypeScript, ships ESM and type definitions.
 
-> Looking for the full Barcodes.gg API (product search, SKU lookups, usage)? Use
-> [`@barcodesgg/sdk`](https://github.com/Murked/barcodes-js-sdk). This package is just the scanner.
+**Links:** [Barcodes.gg](https://barcodes.gg/) ·
+[API docs](https://barcodes.gg/guide/docs/introduction/) ·
+[Get a publishable key](https://barcodes.gg/dashboard/tokens) ·
+[Plans](https://barcodes.gg/guide/docs/membership-plans/) ·
+[Try the online barcode scanner](https://barcodes.gg/tools/barcode-scanner)
+
+> Looking for the full Barcodes.gg API (product search, SKU lookups, usage) on your server?
+> Use [`@barcodesgg/sdk`](https://github.com/Murked/barcodes-js-sdk). This package is just the scanner.
 
 ## Contents
 
@@ -31,12 +40,13 @@ token and get the matching product (name, brand, style code, image) too.
 - [React](#react)
 - [Headless core](#headless-core)
 - [Looking up products](#looking-up-products)
-- [Keeping your token safe](#keeping-your-token-safe)
+- [Publishable keys](#publishable-keys)
 - [Customizing the look](#customizing-the-look)
 - [API reference](#api-reference)
 - [Browser support](#browser-support)
 - [Self-hosting the decoder](#self-hosting-the-decoder)
 - [Development](#development)
+- [Links](#links)
 
 ## Installation
 
@@ -48,7 +58,7 @@ The camera only works on HTTPS pages (and `localhost` during development).
 
 ## Quick start
 
-### Scan only (no token)
+### Scan only (no key)
 
 ```html
 <script type="module">
@@ -64,12 +74,15 @@ The camera only works on HTTPS pages (and `localhost` during development).
 </script>
 ```
 
-### With a Barcodes.gg token
+### With product lookup
 
-Add your token and the scanner looks up every barcode it reads, then shows the product.
+1. [Create a publishable key](https://barcodes.gg/dashboard/tokens) in your Barcodes.gg
+   dashboard and add your website's domain (and `localhost:PORT` for development) to its
+   allowed domains.
+2. Add it to the scanner:
 
 ```html
-<barcode-scanner token="YOUR_API_TOKEN" manual-entry></barcode-scanner>
+<barcode-scanner publishable-key="pk_..." manual-entry></barcode-scanner>
 
 <script>
   document.querySelector('barcode-scanner').addEventListener('barcode-product', (e) => {
@@ -78,8 +91,8 @@ Add your token and the scanner looks up every barcode it reads, then shows the p
 </script>
 ```
 
-Read [Keeping your token safe](#keeping-your-token-safe) before you put a token on a
-public page.
+Every barcode it reads is looked up and the product is shown. See
+[Publishable keys](#publishable-keys) for how keys are protected.
 
 ## Web component
 
@@ -88,15 +101,15 @@ viewfinder, start/stop/torch buttons, a status line, optional manual entry and a
 card.
 
 ```html
-<barcode-scanner token="YOUR_API_TOKEN" manual-entry></barcode-scanner>
+<barcode-scanner publishable-key="pk_..." manual-entry></barcode-scanner>
 ```
 
 ### Attributes
 
 | Attribute | Description |
 |---|---|
-| `token` | Barcodes.gg API token. Enables product lookup. |
-| `lookup-url` | Your own lookup endpoint instead of a token, e.g. `/api/lookup/{barcode}`. See [Looking up products](#looking-up-products). |
+| `publishable-key` | [Barcodes.gg publishable key](https://barcodes.gg/dashboard/tokens) (`pk_…`). Enables product lookup. |
+| `lookup-url` | Your own lookup endpoint instead of a key, e.g. `/api/lookup/{barcode}`. See [Looking up products](#looking-up-products). |
 | `formats` | Comma-separated barcode formats. Default: `ean_13,ean_8,upc_a,upc_e,code_128,code_39`. |
 | `mode` | `continuous` (default) keeps scanning after a code that isn't found. `single` stops after the first read. |
 | `manual-entry` | Show a text field for typing a barcode by hand. |
@@ -111,7 +124,7 @@ The element also reflects its current state as a `state` attribute (`idle`, `sta
 | Member | Description |
 |---|---|
 | `el.start()` / `el.stop()` | Start or stop the camera. |
-| `el.lookup` | A custom [lookup function](#custom-lookup). Overrides `token` and `lookup-url`. |
+| `el.lookup` | A custom [lookup function](#custom-lookup). Overrides `publishable-key` and `lookup-url`. |
 | `el.messages` | Change any text in the UI. See [Text and translations](#4-text-and-translations). |
 | `el.scanner` | The underlying [core scanner](#headless-core), for advanced use. |
 
@@ -140,7 +153,7 @@ npm install @barcodesgg/scanner react
 import { barcodesLookup } from '@barcodesgg/scanner';
 import { useBarcodeScanner } from '@barcodesgg/scanner/react';
 
-const lookup = barcodesLookup({ token: import.meta.env.VITE_BARCODES_TOKEN });
+const lookup = barcodesLookup({ publishableKey: import.meta.env.VITE_BARCODES_PUBLISHABLE_KEY });
 
 export function ProductScanner() {
   const { videoRef, state, product, notFound, error, start, stop } = useBarcodeScanner({ lookup });
@@ -202,22 +215,23 @@ document.querySelector('#scan').addEventListener('click', () => scanner.start())
 
 You choose how lookups happen, or skip them completely.
 
-| Setup | How | Token location |
-|---|---|---|
-| Scan only | No `token`, `lookup-url` or `lookup` | — |
-| Barcodes.gg API | `token="…"` or `barcodesLookup({ token })` | In the page |
-| Your own server | `lookup-url="…"` or `urlLookup(url)` | On your server |
-| Anything else | `lookup` = your own function | Up to you |
+| Setup | How |
+|---|---|
+| Scan only | No `publishable-key`, `lookup-url` or `lookup` |
+| Barcodes.gg API | `publishable-key="pk_…"` or `barcodesLookup({ publishableKey })` |
+| Your own server | `lookup-url="…"` or `urlLookup(url)` |
+| Anything else | `lookup` = your own function |
 
 ### Barcodes.gg API
 
 ```js
 import { createScanner, barcodesLookup } from '@barcodesgg/scanner';
 
-createScanner({ video, lookup: barcodesLookup({ token: 'YOUR_API_TOKEN' }) });
+createScanner({ video, lookup: barcodesLookup({ publishableKey: 'pk_...' }) });
 ```
 
-This calls `GET https://barcodes.gg/api/v2/barcode/lookup/{barcode}`, the same endpoint as
+This calls `GET https://barcodes.gg/api/v2/barcode/lookup/{barcode}`, the same
+[barcode lookup endpoint](https://barcodes.gg/guide/docs/api-instructions/lookup-barcode/) as
 `sdk.barcodes.lookup()` in `@barcodesgg/sdk`. Products come back as:
 
 ```ts
@@ -233,11 +247,12 @@ This calls `GET https://barcodes.gg/api/v2/barcode/lookup/{barcode}`, the same e
 ```
 
 `raw` is typed as `BarcodesLookupResponse`. Lookups that find a product use API calls
-from your token.
+from your plan.
 
 ### Your own server
 
-Keep the token on your server and point the scanner at your endpoint. `{barcode}` is
+Prefer to look products up on your own server (for caching, logging or your own data)? Use a
+secret API key there and point the scanner at your endpoint. `{barcode}` is
 replaced with the scanned value:
 
 ```html
@@ -270,20 +285,40 @@ createScanner({
 
 `signal` is aborted if the user stops the scanner mid-lookup.
 
-## Keeping your token safe
+## Publishable keys
 
-A token in a web page (the `token` attribute or `barcodesLookup`) can be seen by anyone
-who views the page source. That's fine for internal tools and prototypes. For a public
-site:
+Publishable keys (`pk_…`) are made for web pages. Anyone can see them in the page source,
+and that's fine, because a publishable key:
 
-- **Use a separate token for the scanner**, so you can revoke it without affecting
-  anything else and track its usage on its own.
-- **Or keep the token on your server** and use [`lookup-url`](#your-own-server), which also
-  lets you add your own rate limiting and caching.
+- **can only look up barcodes**, nothing else in the API;
+- **only works from the domains you allow** (wildcards like `*.example.com` are supported);
+- **has its own rate limits**: per key, per visitor, and an optional daily cap so a copied
+  key can't use up your API calls.
 
-If a token is invalid, revoked or out of API calls, the scanner keeps scanning and reports
-an `unauthorized` or `quota-exceeded` error. The default UI shows a neutral "Product lookup
-is not available right now." message.
+Create and manage them under [Dashboard → Tokens](https://barcodes.gg/dashboard/tokens).
+Publishable keys are available on paid [plans](https://barcodes.gg/guide/docs/membership-plans/),
+and lookups use your plan's API calls.
+
+For local development, add `localhost` with its port to the allowed domains, e.g.
+`localhost:5173`. The browser sends your page's origin with each lookup, and barcodes.gg checks
+it against that list.
+
+**Never put a secret API key in a web page.** The scanner only accepts keys starting with
+`pk_` and refuses anything else. Keep secret keys on your server, for example with
+[`@barcodesgg/sdk`](https://github.com/Murked/barcodes-js-sdk) behind
+[`lookup-url`](#your-own-server).
+
+If a lookup is refused, the scanner keeps scanning and reports an error code you can act on:
+
+| Code | Usual cause | Default message |
+|---|---|---|
+| `unauthorized` | Key is wrong, expired or revoked. | "Product lookup is not available right now." |
+| `origin-not-allowed` | This website isn't in the key's allowed domains. | "Product lookup is not available on this website." |
+| `rate-limited` | Too many lookups per minute. | "Too many lookups. Please wait a minute." |
+| `quota-exceeded` | Daily cap reached, or no API calls left on your plan. | "Product lookup is not available right now." |
+
+The server's exact reason is in `error.cause`, e.g.
+`"This website (https://shop.example) is not an allowed domain for this publishable key."`.
 
 ## Customizing the look
 
@@ -329,7 +364,7 @@ Parts: `root`, `viewfinder`, `video`, `overlay`, `reticle`, `idle`, `controls`, 
 Replace pieces with your own HTML:
 
 ```html
-<barcode-scanner token="YOUR_API_TOKEN">
+<barcode-scanner publishable-key="pk_...">
   <div slot="idle">Tap “Start camera” to scan</div>
 
   <div slot="result" class="my-card">
@@ -442,8 +477,9 @@ Errors carry a stable `code` rather than a message, so you can show your own wor
 | `insecure-context` | Page isn't on HTTPS. | Stops |
 | `unsupported` | The browser can't access cameras. | Stops |
 | `detector-failed` | The decoder couldn't load. `start()` tries again. | Stops |
-| `unauthorized` | The token is invalid, revoked or not allowed to look up barcodes. | Keeps scanning |
-| `quota-exceeded` | The token has no API calls left. | Keeps scanning |
+| `unauthorized` | The publishable key is invalid, expired or revoked. | Keeps scanning |
+| `origin-not-allowed` | This website isn't an allowed domain for the key. | Keeps scanning |
+| `quota-exceeded` | The key's daily cap was reached, or the plan has no API calls left. | Keeps scanning |
 | `rate-limited` | Too many lookups in a short time. | Keeps scanning |
 | `lookup-failed` | The lookup failed (network or server error). | Keeps scanning |
 | `invalid-input` | A typed-in barcode isn't valid. | — |
@@ -452,7 +488,8 @@ Errors carry a stable `code` rather than a message, so you can show your own wor
 
 | Export | Description |
 |---|---|
-| `barcodesLookup({ token, baseUrl? })` | Barcodes.gg API lookup. |
+| `barcodesLookup({ publishableKey, baseUrl? })` | Barcodes.gg API lookup with a publishable key. |
+| `isPublishableKey(value)` | `true` for a `pk_…` key. |
 | `urlLookup(url, init?)` | Lookup through your own endpoint. |
 | `isValidGtin(value)` | Check an EAN/UPC/GTIN check digit. |
 | `expandUpcE(value)` | Convert an 8-digit UPC-E to UPC-A. |
@@ -504,7 +541,19 @@ npm run serve         # examples at http://localhost:4173/examples/
 Also available: `npm run typecheck`, `npm run lint` and `npm run size`. The
 [examples](examples) folder has a plain web component, a themed one, a headless page, a
 React app and server-side lookup proxies. Open the web component example with
-`?token=YOUR_API_TOKEN` to try live lookups.
+`?key=pk_...` to try live lookups (add `localhost:4173` to the key's allowed domains).
+
+## Links
+
+- [Barcodes.gg](https://barcodes.gg/): sneaker barcode API for UPC and EAN product data
+- [API documentation](https://barcodes.gg/guide/docs/introduction/) and
+  [getting started](https://barcodes.gg/guide/docs/getting-started/)
+- [Barcode lookup endpoint](https://barcodes.gg/guide/docs/api-instructions/lookup-barcode/)
+- [Publishable keys and API keys](https://barcodes.gg/dashboard/tokens)
+- [Plans](https://barcodes.gg/guide/docs/membership-plans/)
+- [Free online barcode scanner](https://barcodes.gg/tools/barcode-scanner) and
+  [sneaker barcode lookup](https://barcodes.gg/sneaker-barcode-lookup)
+- [`@barcodesgg/sdk`](https://github.com/Murked/barcodes-js-sdk): the full API for your server
 
 ## License
 

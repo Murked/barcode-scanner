@@ -1,7 +1,8 @@
 # Lookup through your own server
 
-If you don't want your Barcodes.gg token in the browser, look products up on your server
-and point the scanner at that endpoint:
+Most sites should use a [publishable key](https://barcodes.gg/dashboard/tokens) directly in the
+browser. If you'd rather look products up on your own server (to add caching, logging or your
+own data), use a secret API key there and point the scanner at your endpoint:
 
 ```js
 import { createScanner, urlLookup } from '@barcodesgg/scanner';

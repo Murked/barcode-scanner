@@ -50,6 +50,7 @@ export const defaultMessages: Messages = {
     'lookup-failed': 'Lookup is unavailable right now. Please try again.',
     'rate-limited': 'Too many lookups. Please wait a minute.',
     unauthorized: 'Product lookup is not available right now.',
+    'origin-not-allowed': 'Product lookup is not available on this website.',
     'quota-exceeded': 'Product lookup is not available right now.',
   },
 };

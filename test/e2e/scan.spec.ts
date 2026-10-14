@@ -106,10 +106,12 @@ test('pauses when the tab is hidden', async ({ page }) => {
   await expect(page.locator('#status')).toHaveText('paused');
 });
 
-test('token mode: looks up with the Barcodes.gg API', async ({ page }) => {
-  const calls: { url: string; auth: string | null }[] = [];
-  await page.route('https://barcodes.gg/api/v2/barcode/lookup/**', (route) => {
-    calls.push({ url: route.request().url(), auth: route.request().headers()['authorization'] ?? null });
+test('publishable key: looks up with the Barcodes.gg API', async ({ page }) => {
+  const calls: { url: string; auth: string | null; origin: string | null }[] = [];
+  await page.route('https://barcodes.gg/api/v2/barcode/lookup/**', async (route) => {
+    const headers = await route.request().allHeaders();
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization' } });
+    calls.push({ url: route.request().url(), auth: headers['authorization'] ?? null, origin: headers['origin'] ?? null });
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -128,25 +130,28 @@ test('token mode: looks up with the Barcodes.gg API', async ({ page }) => {
   });
   await page.route('https://barcodes.gg/api/image/**', (route) => route.abort());
 
-  await page.goto('/examples/web-component/?token=tok_test');
+  await page.goto('/examples/web-component/?key=pk_test1');
   await page.getByRole('button', { name: 'Start camera' }).click();
   await expect(page.locator('barcode-scanner [part="product-name"]')).toHaveText('Air Jordan 1 Low');
   await expect(page.locator('barcode-scanner [part="product-meta"]')).toHaveText('Jordan · DZ5485-612');
   await expect(page.locator('barcode-scanner [part="product-link"]')).toHaveAttribute('href', `https://barcodes.gg/barcode/${EAN}`);
-  expect(calls).toEqual([{ url: `https://barcodes.gg/api/v2/barcode/lookup/${EAN}?fields=*`, auth: 'Bearer tok_test' }]);
+  // barcodes.gg checks the Origin header against the key's allowed domains.
+  expect(calls).toEqual([
+    { url: `https://barcodes.gg/api/v2/barcode/lookup/${EAN}?fields=*`, auth: 'Bearer pk_test1', origin: 'http://localhost:4173' },
+  ]);
 });
 
-test('token mode: an invalid token shows a neutral message', async ({ page }) => {
+test('publishable key: a domain that is not allowed shows a clear message', async ({ page }) => {
   await page.route('https://barcodes.gg/api/v2/barcode/lookup/**', (route) =>
     route.fulfill({
-      status: 401,
+      status: 403,
       contentType: 'application/json',
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: true, message: 'Invalid authorization token.' }),
+      body: JSON.stringify({ error: true, message: 'This website (http://localhost:4173) is not an allowed domain for this publishable key.' }),
     }),
   );
-  await page.goto('/examples/web-component/?token=bad');
+  await page.goto('/examples/web-component/?key=pk_test1');
   await page.getByRole('button', { name: 'Start camera' }).click();
-  await expect(page.getByRole('status')).toHaveText('Product lookup is not available right now.');
-  await expect(page.locator('#log')).toContainText('error     unauthorized');
+  await expect(page.getByRole('status')).toHaveText('Product lookup is not available on this website.');
+  await expect(page.locator('#log')).toContainText('error     origin-not-allowed');
 });

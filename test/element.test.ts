@@ -215,7 +215,7 @@ describe('<barcode-scanner>', () => {
     await restarted;
   });
 
-  test('token attribute looks up with the Barcodes.gg API', async () => {
+  test('publishable-key attribute looks up with the Barcodes.gg API', async () => {
     stubGetUserMedia();
     const fetch = stubFetch({
       error: false,
@@ -223,27 +223,55 @@ describe('<barcode-scanner>', () => {
       product: { product_name: 'Dunk Low', product_brand: 'Nike', product_style_code: 'DD1391-100', product_image: 'https://barcodes.gg/api/image/uid/p1' },
     });
     reads = [EAN, EAN];
-    const el = mount('<barcode-scanner token="tok_pub" lookup-url="/ignored/{barcode}"></barcode-scanner>');
+    const el = mount('<barcode-scanner publishable-key="pk_test1" lookup-url="/ignored/{barcode}"></barcode-scanner>');
     await el.start();
     await vi.advanceTimersByTimeAsync(500);
     const [url, init] = fetch.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`https://barcodes.gg/api/v2/barcode/lookup/${EAN}?fields=*`);
-    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer tok_pub');
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer pk_test1');
     expect(q(el, '[data-product-name]').textContent).toBe('Dunk Low');
     expect(q(el, '[data-product-meta]').textContent).toBe('Nike \u00b7 DD1391-100');
     expect(q<HTMLAnchorElement>(el, '[data-product-link]').getAttribute('href')).toBe(`https://barcodes.gg/barcode/${EAN}`);
   });
 
-  test('an invalid token shows a neutral message and keeps scanning', async () => {
+  test('an invalid publishable key shows a neutral message and keeps scanning', async () => {
     stubGetUserMedia();
-    stubFetch({ error: true, message: 'Invalid authorization token.' }, 401);
+    stubFetch({ error: true, message: 'Invalid or expired publishable key.' }, 401);
     reads = [EAN, EAN];
-    const el = mount('<barcode-scanner token="bad"></barcode-scanner>');
+    const el = mount('<barcode-scanner publishable-key="pk_revoked"></barcode-scanner>');
     const errors = collect(el, 'barcode-error');
     await el.start();
     await vi.advanceTimersByTimeAsync(500);
     expect(errors[0].detail.code).toBe('unauthorized');
     expect(statusText(el)).toBe('Product lookup is not available right now.');
+    expect(el.scanner?.state).toBe('scanning');
+  });
+
+  test('a domain not allowed for the key is reported as origin-not-allowed', async () => {
+    stubGetUserMedia();
+    stubFetch({ error: true, message: 'This website (http://localhost:3000) is not an allowed domain for this publishable key.' }, 403);
+    reads = [EAN, EAN];
+    const el = mount('<barcode-scanner publishable-key="pk_test1"></barcode-scanner>');
+    const errors = collect(el, 'barcode-error');
+    await el.start();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(errors[0].detail.code).toBe('origin-not-allowed');
+    expect(errors[0].detail.error.cause).toMatch(/not an allowed domain/);
+    expect(statusText(el)).toBe('Product lookup is not available on this website.');
+  });
+
+  test('a secret API key in publishable-key is never sent', async () => {
+    stubGetUserMedia();
+    const fetch = stubFetch({});
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    reads = [EAN, EAN];
+    const el = mount('<barcode-scanner publishable-key="12|secretSanctumToken"></barcode-scanner>');
+    const errors = collect(el, 'barcode-error');
+    await el.start();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(expect.stringMatching(/must start with "pk_"/));
+    expect(errors[0].detail.code).toBe('unauthorized');
     expect(el.scanner?.state).toBe('scanning');
   });
 

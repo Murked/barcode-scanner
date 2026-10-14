@@ -21,7 +21,8 @@
   <main>
     <h1>&lt;barcode-scanner&gt;</h1>
     <p>Default UI with a lookup and manual entry. Uses the local demo endpoint (try <code>5012345678900</code>),
-      or the Barcodes.gg API if you open this page with <code>?token=YOUR_TOKEN</code>.</p>
+      or the Barcodes.gg API if you open this page with <code>?key=pk_…</code> (a
+      <a href="https://barcodes.gg/dashboard/tokens">publishable key</a> with <code>localhost:4173</code> in its allowed domains).</p>
 
     <!-- wasm-url self-hosts the zxing wasm; omit it to use the jsDelivr CDN default. -->
     <barcode-scanner
@@ -39,9 +40,9 @@
     import '@barcodesgg/scanner/element';
 
     const el = document.querySelector('barcode-scanner');
-    // ?token=... switches from the demo endpoint to the Barcodes.gg API.
-    const token = new URLSearchParams(location.search).get('token');
-    if (token) el.setAttribute('token', token);
+    // ?key=pk_... switches from the demo endpoint to the Barcodes.gg API.
+    const key = new URLSearchParams(location.search).get('key');
+    if (key) el.setAttribute('publishable-key', key);
     const log = (line) => { document.getElementById('log').textContent += line + '\n'; };
 
     el.addEventListener('barcode-state', (e) => log(`state     ${e.detail.state}`));

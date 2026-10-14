@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { barcodesLookup, urlLookup } from '../src';
+import { barcodesLookup, isPublishableKey, urlLookup } from '../src';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -83,7 +83,7 @@ describe('urlLookup', () => {
   });
 });
 
-describe('barcodesLookup (Barcodes.gg API)', () => {
+describe('barcodesLookup (Barcodes.gg publishable key)', () => {
   const hit = {
     error: false,
     response_time: '12ms',
@@ -107,21 +107,28 @@ describe('barcodesLookup (Barcodes.gg API)', () => {
     },
   };
 
-  test('requires a token', () => {
-    expect(() => barcodesLookup({ token: '  ' })).toThrow(/token is required/);
+  test('requires a publishable key', () => {
+    expect(() => barcodesLookup({ publishableKey: '  ' })).toThrow(/publishableKey is required/);
   });
 
-  test('calls the v2 barcode lookup endpoint with the bearer token', async () => {
+  test('rejects anything that is not a publishable key (e.g. a secret API key)', () => {
+    expect(() => barcodesLookup({ publishableKey: '12|abcdefSecretSanctumToken' })).toThrow(/starting with "pk_"/);
+    expect(isPublishableKey('pk_abc')).toBe(true);
+    expect(isPublishableKey('sk_abc')).toBe(false);
+    expect(isPublishableKey(undefined)).toBe(false);
+  });
+
+  test('sends the publishable key as a bearer token to the v2 barcode lookup endpoint', async () => {
     const fetch = stubFetch(json(hit));
-    await barcodesLookup({ token: 'tok_1' })('0196153412345', ctx());
+    await barcodesLookup({ publishableKey: 'pk_test1' })('0196153412345', ctx());
     const [url, init] = fetch.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://barcodes.gg/api/v2/barcode/lookup/0196153412345?fields=*');
-    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer tok_1');
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer pk_test1');
   });
 
   test('maps a hit to a Product, keeping the full payload in raw', async () => {
     stubFetch(json(hit));
-    const result = await barcodesLookup({ token: 't' })('0196153412345', ctx());
+    const result = await barcodesLookup({ publishableKey: 'pk_t' })('0196153412345', ctx());
     expect(result).toEqual({
       found: true,
       product: {
@@ -138,7 +145,7 @@ describe('barcodesLookup (Barcodes.gg API)', () => {
 
   test('custom baseUrl', async () => {
     const fetch = stubFetch(json(hit));
-    await barcodesLookup({ token: 't', baseUrl: 'https://staging.barcodes.gg/api/v2/' })('123', ctx());
+    await barcodesLookup({ publishableKey: 'pk_t', baseUrl: 'https://staging.barcodes.gg/api/v2/' })('123', ctx());
     expect(fetch.mock.calls[0][0]).toBe('https://staging.barcodes.gg/api/v2/barcode/lookup/123?fields=*');
   });
 
@@ -146,24 +153,30 @@ describe('barcodesLookup (Barcodes.gg API)', () => {
     '200 { error: true, message: %j } → not found',
     async (message) => {
       stubFetch(json({ error: true, message }));
-      expect(await barcodesLookup({ token: 't' })('12345678', ctx())).toEqual({ found: false });
+      expect(await barcodesLookup({ publishableKey: 'pk_t' })('12345678', ctx())).toEqual({ found: false });
     },
   );
 
   test.each([
-    [401, { error: true, message: 'Invalid authorization token.' }, 'unauthorized'],
+    // Messages as returned by barcodes.gg (AuthenticatePublishableKey / BarcodeController).
+    [401, { error: true, message: 'Invalid or expired publishable key.' }, 'unauthorized'],
+    [403, { error: true, message: 'This website (https://evil.example) is not an allowed domain for this publishable key.' }, 'origin-not-allowed'],
+    [403, { error: true, message: 'Publishable keys can only be used from a website. No Origin or Referer header was sent.' }, 'origin-not-allowed'],
+    [403, { error: true, message: 'Publishable keys can only be used for barcode lookups. Use an API key from your server for this endpoint.' }, 'unauthorized'],
     [403, { error: true, message: 'Invalid permissions to perform this action.' }, 'unauthorized'],
     [403, { error: true, message: 'API Token has run out of usage, please top up via the dashboard.' }, 'quota-exceeded'],
-    [429, { message: 'Too Many Attempts.' }, 'rate-limited'],
+    [429, { error: true, message: 'Rate limit reached for this publishable key, please wait and try again.' }, 'rate-limited'],
+    [429, { error: true, message: 'Rate limit reached, please wait and try again.' }, 'rate-limited'],
+    [429, { error: true, message: 'Daily limit reached for this publishable key.' }, 'quota-exceeded'],
     [400, { error: true, message: 'Please enter a valid barcode.' }, 'invalid-input'],
     [500, { message: 'Server Error' }, 'lookup-failed'],
   ])('%i → %s', async (status, body, code) => {
     stubFetch(json(body, status as number));
-    await expect(barcodesLookup({ token: 't' })('12345678', ctx())).rejects.toMatchObject({ code });
+    await expect(barcodesLookup({ publishableKey: 'pk_t' })('12345678', ctx())).rejects.toMatchObject({ code });
   });
 
   test('an unexpected 200 error envelope → lookup-failed', async () => {
     stubFetch(json({ error: true, message: 'Something else' }));
-    await expect(barcodesLookup({ token: 't' })('12345678', ctx())).rejects.toMatchObject({ code: 'lookup-failed' });
+    await expect(barcodesLookup({ publishableKey: 'pk_t' })('12345678', ctx())).rejects.toMatchObject({ code: 'lookup-failed' });
   });
 });

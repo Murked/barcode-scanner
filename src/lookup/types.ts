@@ -9,8 +9,11 @@ export interface UrlLookupInit<P> extends RequestInit {
 }
 
 export interface BarcodesLookupOptions {
-  /** Barcodes.gg API token. Visible to anyone using your page — see the README. */
-  token: string;
+  /**
+   * Barcodes.gg publishable key (`pk_…`) from https://barcodes.gg/dashboard/tokens.
+   * Safe to use in web pages: it can only look up barcodes, from the domains you allow.
+   */
+  publishableKey: string;
   /** API base URL. Default `https://barcodes.gg/api/v2`. */
   baseUrl?: string;
   /** Public product page base used for `pageUrl`. Default `https://barcodes.gg/barcode/`. */
