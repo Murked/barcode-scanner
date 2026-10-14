@@ -13,6 +13,9 @@ permissions:
 
 jobs:
   release:
+    # Off until the package name is final and NPM_TOKEN is configured:
+    # set the repository variable RELEASE_ENABLED=true (Settings → Variables → Actions).
+    if: vars.RELEASE_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

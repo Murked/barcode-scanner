@@ -18,16 +18,27 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
-    permissions: ['camera'],
-    launchOptions: {
-      args: [
-        '--use-fake-ui-for-media-stream',
-        '--use-fake-device-for-media-stream',
-        `--use-file-for-fake-video-capture=${FIXTURE}`,
-      ],
-    },
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      // All specs. scan/dogfood use Chromium's file-backed fake camera (real video pipeline).
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        permissions: ['camera'],
+        launchOptions: {
+          args: [
+            '--use-fake-ui-for-media-stream',
+            '--use-fake-device-for-media-stream',
+            `--use-file-for-fake-video-capture=${FIXTURE}`,
+          ],
+        },
+      },
+    },
+    // Firefox and WebKit (Safari's engine) use a canvas-backed fake camera instead.
+    { name: 'firefox', testMatch: 'cross-browser.spec.ts', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', testMatch: 'cross-browser.spec.ts', use: { ...devices['Desktop Safari'] } },
+  ],
   webServer: {
     command: 'node scripts/serve.mjs',
     url: `http://localhost:${PORT}/examples/`,

@@ -202,6 +202,19 @@ describe('<barcode-scanner>', () => {
     expect(slot.assignedElements()).toEqual([document.getElementById('mine')]);
   });
 
+  test('restarting via start() (e.g. from a slotted button) hides the previous result', async () => {
+    stubGetUserMedia();
+    stubFetch({ found: true, product: { barcode: EAN, name: 'Shoe' } });
+    reads = [EAN, EAN];
+    const el = mount('<barcode-scanner lookup-url="/l/{barcode}"></barcode-scanner>');
+    await el.start();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(q(el, '[data-result]').hidden).toBe(false);
+    const restarted = el.start();
+    expect(q(el, '[data-result]').hidden).toBe(true);
+    await restarted;
+  });
+
   test('the lookup property wins over lookup-url', async () => {
     stubGetUserMedia();
     const fetch = stubFetch({});
