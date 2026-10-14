@@ -215,6 +215,38 @@ describe('<barcode-scanner>', () => {
     await restarted;
   });
 
+  test('token attribute looks up with the Barcodes.gg API', async () => {
+    stubGetUserMedia();
+    const fetch = stubFetch({
+      error: false,
+      barcode: { barcode_value: EAN },
+      product: { product_name: 'Dunk Low', product_brand: 'Nike', product_style_code: 'DD1391-100', product_image: 'https://barcodes.gg/api/image/uid/p1' },
+    });
+    reads = [EAN, EAN];
+    const el = mount('<barcode-scanner token="tok_pub" lookup-url="/ignored/{barcode}"></barcode-scanner>');
+    await el.start();
+    await vi.advanceTimersByTimeAsync(500);
+    const [url, init] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`https://barcodes.gg/api/v2/barcode/lookup/${EAN}?fields=*`);
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer tok_pub');
+    expect(q(el, '[data-product-name]').textContent).toBe('Dunk Low');
+    expect(q(el, '[data-product-meta]').textContent).toBe('Nike \u00b7 DD1391-100');
+    expect(q<HTMLAnchorElement>(el, '[data-product-link]').getAttribute('href')).toBe(`https://barcodes.gg/barcode/${EAN}`);
+  });
+
+  test('an invalid token shows a neutral message and keeps scanning', async () => {
+    stubGetUserMedia();
+    stubFetch({ error: true, message: 'Invalid authorization token.' }, 401);
+    reads = [EAN, EAN];
+    const el = mount('<barcode-scanner token="bad"></barcode-scanner>');
+    const errors = collect(el, 'barcode-error');
+    await el.start();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(errors[0].detail.code).toBe('unauthorized');
+    expect(statusText(el)).toBe('Product lookup is not available right now.');
+    expect(el.scanner?.state).toBe('scanning');
+  });
+
   test('the lookup property wins over lookup-url', async () => {
     stubGetUserMedia();
     const fetch = stubFetch({});

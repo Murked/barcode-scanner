@@ -46,17 +46,6 @@ const server = createServer((req, res) => {
     return res.end(JSON.stringify(product ? { found: true, product } : { found: false }));
   }
 
-  // Mirrors barcodes-new ScannerController's flat payload (used by the dogfood E2E).
-  const flat = url.pathname.match(/^\/api\/flat-lookup\/([^/]+)$/);
-  if (flat) {
-    const barcode = decodeURIComponent(flat[1]);
-    const p = PRODUCTS[barcode];
-    res.writeHead(/^[0-9]{8,15}$/.test(barcode) ? 200 : 422, { 'Content-Type': TYPES['.json'], 'Cache-Control': 'no-store' });
-    return res.end(JSON.stringify(p
-      ? { found: true, barcode, name: p.name, brand: p.brand, style_code: p.styleCode, sizes_count: 3, image_url: p.imageUrl, page_url: p.pageUrl }
-      : { found: false, barcode }));
-  }
-
   let file = normalize(join(root, decodeURIComponent(url.pathname)));
   if (!file.startsWith(root + sep) && file !== root) {
     res.writeHead(403);

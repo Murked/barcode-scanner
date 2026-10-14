@@ -83,6 +83,87 @@ describe('urlLookup', () => {
   });
 });
 
-test('barcodesLookup is a stub until publishable keys exist', () => {
-  expect(() => barcodesLookup({ key: 'pk_x' })).toThrow(/not available yet/);
+describe('barcodesLookup (Barcodes.gg API)', () => {
+  const hit = {
+    error: false,
+    response_time: '12ms',
+    request_fulfilled: true,
+    request_debited: true,
+    barcode: { barcode_type: 'EAN-13', barcode_value: '196153412345', barcode_added: null, product_size: { us: '9', uk: '8', eu: '42.5' } },
+    product: {
+      product_name: 'Air Jordan 1 Low',
+      product_brand: 'Jordan',
+      product_category: 'sneakers',
+      product_unique_id: 'prod_123',
+      product_description: null,
+      product_style_code: 'DZ5485-612',
+      product_colorway: 'Red',
+      product_release_date: null,
+      product_retail_price: 110,
+      product_image: 'https://barcodes.gg/api/image/uid/prod_123',
+      product_sizes: ['7', '13'],
+      product_added: null,
+      product_updated: null,
+    },
+  };
+
+  test('requires a token', () => {
+    expect(() => barcodesLookup({ token: '  ' })).toThrow(/token is required/);
+  });
+
+  test('calls the v2 barcode lookup endpoint with the bearer token', async () => {
+    const fetch = stubFetch(json(hit));
+    await barcodesLookup({ token: 'tok_1' })('0196153412345', ctx());
+    const [url, init] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://barcodes.gg/api/v2/barcode/lookup/0196153412345?fields=*');
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer tok_1');
+  });
+
+  test('maps a hit to a Product, keeping the full payload in raw', async () => {
+    stubFetch(json(hit));
+    const result = await barcodesLookup({ token: 't' })('0196153412345', ctx());
+    expect(result).toEqual({
+      found: true,
+      product: {
+        barcode: '196153412345',
+        name: 'Air Jordan 1 Low',
+        brand: 'Jordan',
+        styleCode: 'DZ5485-612',
+        imageUrl: 'https://barcodes.gg/api/image/uid/prod_123',
+        pageUrl: 'https://barcodes.gg/barcode/0196153412345',
+        raw: hit,
+      },
+    });
+  });
+
+  test('custom baseUrl', async () => {
+    const fetch = stubFetch(json(hit));
+    await barcodesLookup({ token: 't', baseUrl: 'https://staging.barcodes.gg/api/v2/' })('123', ctx());
+    expect(fetch.mock.calls[0][0]).toBe('https://staging.barcodes.gg/api/v2/barcode/lookup/123?fields=*');
+  });
+
+  test.each(['Barcode could not be found.', 'We do not hold any product information for this barcode.'])(
+    '200 { error: true, message: %j } → not found',
+    async (message) => {
+      stubFetch(json({ error: true, message }));
+      expect(await barcodesLookup({ token: 't' })('12345678', ctx())).toEqual({ found: false });
+    },
+  );
+
+  test.each([
+    [401, { error: true, message: 'Invalid authorization token.' }, 'unauthorized'],
+    [403, { error: true, message: 'Invalid permissions to perform this action.' }, 'unauthorized'],
+    [403, { error: true, message: 'API Token has run out of usage, please top up via the dashboard.' }, 'quota-exceeded'],
+    [429, { message: 'Too Many Attempts.' }, 'rate-limited'],
+    [400, { error: true, message: 'Please enter a valid barcode.' }, 'invalid-input'],
+    [500, { message: 'Server Error' }, 'lookup-failed'],
+  ])('%i → %s', async (status, body, code) => {
+    stubFetch(json(body, status as number));
+    await expect(barcodesLookup({ token: 't' })('12345678', ctx())).rejects.toMatchObject({ code });
+  });
+
+  test('an unexpected 200 error envelope → lookup-failed', async () => {
+    stubFetch(json({ error: true, message: 'Something else' }));
+    await expect(barcodesLookup({ token: 't' })('12345678', ctx())).rejects.toMatchObject({ code: 'lookup-failed' });
+  });
 });

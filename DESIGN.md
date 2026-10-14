@@ -1,8 +1,10 @@
 # Barcode Scanner Library — Design
 
+> **Status:** v1 implemented as `@barcodesgg/scanner`. Since this doc was written, `barcodesLookup({ token })` has been implemented against the Barcodes.gg v2 API (`GET /api/v2/barcode/lookup/{barcode}`), so lookups work with or without a token. The README is the source of truth for the current API.
+
 A drop-in, customizable barcode scanner for websites. Works as a pure scanner (returns the scanned value) or, when a lookup is supplied, fetches product data — optionally from our Barcodes API so it stays on brand.
 
-> `@yourbrand/scanner` is a placeholder package name throughout. Publishable keys for the branded Barcodes API are **out of scope for v1** — lookup is a pluggable function so a branded helper can be added later without API changes.
+> `@barcodesgg/scanner` is a placeholder package name throughout. Publishable keys for the branded Barcodes API are **out of scope for v1** — lookup is a pluggable function so a branded helper can be added later without API changes.
 
 ---
 
@@ -128,7 +130,7 @@ barcode-scanner/
 
 ```json
 {
-  "name": "@yourbrand/scanner",
+  "name": "@barcodesgg/scanner",
   "version": "0.1.0",
   "type": "module",
   "sideEffects": ["./dist/element/index.js"],
@@ -692,12 +694,12 @@ Because `lookup` is just a function, integrators can plug in Open Food Facts, th
 
 ---
 
-## 5. Web component (`@yourbrand/scanner/element`)
+## 5. Web component (`@barcodesgg/scanner/element`)
 
 ### Usage
 
 ```html
-<script type="module">import '@yourbrand/scanner/element';</script>
+<script type="module">import '@barcodesgg/scanner/element';</script>
 
 <!-- Scan-only -->
 <barcode-scanner></barcode-scanner>
@@ -976,7 +978,7 @@ declare global {
 </barcode-scanner>
 
 <script type="module">
-  import '@yourbrand/scanner/element';
+  import '@barcodesgg/scanner/element';
   document.querySelector('barcode-scanner').addEventListener('barcode-product', ({ detail }) => {
     document.getElementById('p-img').src = detail.product.imageUrl;
     document.getElementById('p-name').textContent = detail.product.name;
@@ -986,7 +988,7 @@ declare global {
 
 ---
 
-## 6. React hook (`@yourbrand/scanner/react`)
+## 6. React hook (`@barcodesgg/scanner/react`)
 
 ```ts
 // src/react/index.ts
@@ -1041,8 +1043,8 @@ export function useBarcodeScanner<P = Product>(
 Usage — fully their own JSX:
 
 ```tsx
-import { useBarcodeScanner } from '@yourbrand/scanner/react';
-import { urlLookup } from '@yourbrand/scanner';
+import { useBarcodeScanner } from '@barcodesgg/scanner/react';
+import { urlLookup } from '@barcodesgg/scanner';
 
 export function Scanner() {
   const { videoRef, state, code, product, error, start, stop } = useBarcodeScanner({
@@ -1066,7 +1068,7 @@ export function Scanner() {
 ## 7. Headless vanilla usage (scan-only)
 
 ```js
-import { createScanner } from '@yourbrand/scanner';
+import { createScanner } from '@barcodesgg/scanner';
 
 const scanner = createScanner({
   video: document.querySelector('#cam'),
@@ -1122,7 +1124,7 @@ Route::get('/api/lookup/{barcode}', function (string $barcode) {
 
 ```js
 import wasmUrl from 'zxing-wasm/reader/zxing_reader.wasm?url';
-import { createScanner, urlLookup } from '@yourbrand/scanner';
+import { createScanner, urlLookup } from '@barcodesgg/scanner';
 
 const root = document.querySelector('[data-barcode-scanner]');
 if (root) {
@@ -1274,7 +1276,7 @@ Manual check on real iOS Safari + Android Chrome before every minor release — 
 
 ## 14. Open decisions
 
-1. **Package name & npm scope** (e.g. `@yourbrand/scanner`) and GitHub org.
+1. **Package name & npm scope** (e.g. `@barcodesgg/scanner`) and GitHub org.
 2. **Default wasm source:** CDN (zero-config) vs. require self-host. Recommendation: CDN default, documented `wasmUrl` self-host option.
 3. **Default detector:** `'auto'` (native first) vs. always zxing for consistent results. Recommendation: `'auto'`.
 4. **Manual entry in the element:** opt-in via `manual-entry` attribute (recommended).

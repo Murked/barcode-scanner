@@ -7,7 +7,9 @@ export type ScannerErrorCode =
   | 'detector-failed' // wasm failed to load, etc.
   | 'invalid-input' // manual lookup value rejected
   | 'lookup-failed'
-  | 'rate-limited';
+  | 'rate-limited'
+  | 'unauthorized' // lookup token missing, invalid, or lacks permission
+  | 'quota-exceeded'; // lookup token has no API calls left
 
 /** Errors carry stable codes, never user-facing English. UI layers translate codes. */
 export class ScannerError extends Error {

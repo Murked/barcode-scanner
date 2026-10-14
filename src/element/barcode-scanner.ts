@@ -1,5 +1,5 @@
 import { createScanner } from '../scanner';
-import { urlLookup } from '../lookup';
+import { barcodesLookup, urlLookup } from '../lookup';
 import type { BarcodeFormat, LookupFn, Product, Scanner, ScannerState } from '../types';
 import type { ScannerError } from '../errors';
 import { template } from './template';
@@ -14,13 +14,14 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
 /**
  * `<barcode-scanner>` — default UI over the headless core.
  *
- * Attributes: `formats`, `lookup-url`, `mode`, `manual-entry`, `autostart`, `wasm-url`.
+ * Attributes: `token`, `lookup-url`, `formats`, `mode`, `manual-entry`, `autostart`, `wasm-url`.
+ * Lookup: `lookup` property → `token` (Barcodes.gg API) → `lookup-url` (your backend) → none (scan-only).
  * Properties: `lookup`, `messages`, `scanner` (read-only escape hatch).
  * Events (bubbling, composed): `barcode-state`, `barcode-detect`, `barcode-product`,
  * `barcode-not-found`, `barcode-error`.
  */
 export class BarcodeScannerElement extends Base {
-  static observedAttributes = ['formats', 'lookup-url', 'mode', 'manual-entry', 'wasm-url'];
+  static observedAttributes = ['token', 'formats', 'lookup-url', 'mode', 'manual-entry', 'wasm-url'];
 
   #scanner?: Scanner<Product>;
   #offs: (() => void)[] = [];
@@ -43,7 +44,7 @@ export class BarcodeScannerElement extends Base {
     return this.#root.querySelector<T>(sel)!;
   }
 
-  /** Custom lookup function. Takes precedence over `lookup-url`. */
+  /** Custom lookup function. Takes precedence over `token` and `lookup-url`. */
   get lookup(): LookupFn<any> | undefined {
     return this.#lookup;
   }
@@ -135,6 +136,7 @@ export class BarcodeScannerElement extends Base {
     this.#teardown();
 
     const lookupUrl = this.getAttribute('lookup-url');
+    const token = this.getAttribute('token')?.trim();
     const formats = this.getAttribute('formats')
       ?.split(',')
       .map((f) => f.trim())
@@ -147,7 +149,9 @@ export class BarcodeScannerElement extends Base {
       formats: formats?.length ? formats : undefined,
       mode,
       wasmUrl: this.getAttribute('wasm-url') ?? undefined,
-      lookup: this.#lookup ?? (lookupUrl ? urlLookup(lookupUrl) : undefined),
+      lookup:
+        this.#lookup ??
+        (token ? barcodesLookup({ token }) : lookupUrl ? urlLookup(lookupUrl) : undefined),
     }));
 
     this.#offs = [

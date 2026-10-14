@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type FormEvent } from 'react';
-import { urlLookup, type ScannerErrorCode } from '@yourbrand/scanner';
-import { useBarcodeScanner } from '@yourbrand/scanner/react';
+import { barcodesLookup, urlLookup, type ScannerErrorCode } from '@barcodesgg/scanner';
+import { useBarcodeScanner } from '@barcodesgg/scanner/react';
 // Self-host the zxing wasm (Vite resolves this to a hashed asset URL).
 import wasmUrl from 'zxing-wasm/reader/zxing_reader.wasm?url';
 
@@ -15,13 +15,17 @@ const errorText: Record<ScannerErrorCode, string> = {
   'invalid-input': 'That is not a valid barcode.',
   'lookup-failed': 'Lookup failed, try again.',
   'rate-limited': 'Slow down a little.',
+  unauthorized: 'Lookup is not available.',
+  'quota-exceeded': 'Lookup is not available.',
 };
+
+const token = import.meta.env.VITE_BARCODES_TOKEN as string | undefined;
 
 export function App() {
   const [manual, setManual] = useState('');
   const { videoRef, state, code, product, notFound, error, start, stop, lookup } = useBarcodeScanner({
-    // Point this at your own proxy (see examples/proxy-server).
-    lookup: urlLookup('/api/lookup/{barcode}'),
+    // With VITE_BARCODES_TOKEN set, look up via the Barcodes.gg API; otherwise via your own backend.
+    lookup: token ? barcodesLookup({ token }) : urlLookup('/api/lookup/{barcode}'),
     wasmUrl,
     onDetect: (c) => console.log('scanned', c.value),
   });

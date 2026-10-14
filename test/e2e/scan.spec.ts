@@ -105,3 +105,48 @@ test('pauses when the tab is hidden', async ({ page }) => {
   });
   await expect(page.locator('#status')).toHaveText('paused');
 });
+
+test('token mode: looks up with the Barcodes.gg API', async ({ page }) => {
+  const calls: { url: string; auth: string | null }[] = [];
+  await page.route('https://barcodes.gg/api/v2/barcode/lookup/**', (route) => {
+    calls.push({ url: route.request().url(), auth: route.request().headers()['authorization'] ?? null });
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({
+        error: false,
+        barcode: { barcode_type: 'EAN-13', barcode_value: EAN, barcode_added: null, product_size: { us: '9', uk: '8', eu: '42.5' } },
+        product: {
+          product_name: 'Air Jordan 1 Low',
+          product_brand: 'Jordan',
+          product_style_code: 'DZ5485-612',
+          product_image: 'https://barcodes.gg/api/image/uid/prod_1',
+        },
+      }),
+    });
+  });
+  await page.route('https://barcodes.gg/api/image/**', (route) => route.abort());
+
+  await page.goto('/examples/web-component/?token=tok_test');
+  await page.getByRole('button', { name: 'Start camera' }).click();
+  await expect(page.locator('barcode-scanner [part="product-name"]')).toHaveText('Air Jordan 1 Low');
+  await expect(page.locator('barcode-scanner [part="product-meta"]')).toHaveText('Jordan · DZ5485-612');
+  await expect(page.locator('barcode-scanner [part="product-link"]')).toHaveAttribute('href', `https://barcodes.gg/barcode/${EAN}`);
+  expect(calls).toEqual([{ url: `https://barcodes.gg/api/v2/barcode/lookup/${EAN}?fields=*`, auth: 'Bearer tok_test' }]);
+});
+
+test('token mode: an invalid token shows a neutral message', async ({ page }) => {
+  await page.route('https://barcodes.gg/api/v2/barcode/lookup/**', (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: true, message: 'Invalid authorization token.' }),
+    }),
+  );
+  await page.goto('/examples/web-component/?token=bad');
+  await page.getByRole('button', { name: 'Start camera' }).click();
+  await expect(page.getByRole('status')).toHaveText('Product lookup is not available right now.');
+  await expect(page.locator('#log')).toContainText('error     unauthorized');
+});

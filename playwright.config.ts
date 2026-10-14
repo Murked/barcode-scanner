@@ -21,7 +21,7 @@ export default defineConfig({
   },
   projects: [
     {
-      // All specs. scan/dogfood use Chromium's file-backed fake camera (real video pipeline).
+      // All specs. scan.spec uses Chromium's file-backed fake camera (real video pipeline).
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],

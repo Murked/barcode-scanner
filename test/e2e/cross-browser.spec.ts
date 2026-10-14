@@ -74,10 +74,3 @@ test('themed example: ::part() and slotted result', async ({ page }) => {
   await page.getByRole('button', { name: 'Scan', exact: true }).click();
   await expect(page.locator('#p-name')).toHaveText('Demo Runner', { timeout: 15_000 });
 });
-
-test('dogfood page: scan opens the dialog', async ({ page }) => {
-  await page.goto('/test/e2e/dogfood/');
-  test.skip(!(await canCapture(page)), 'no media capture in this browser build');
-  await page.getByRole('button', { name: 'Start camera' }).click();
-  await expect(page.getByRole('dialog').locator('[data-name]')).toHaveText('Demo Runner', { timeout: 15_000 });
-});

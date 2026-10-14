@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Headless — @yourbrand/scanner</title>
+  <title>Headless — @barcodesgg/scanner</title>
   <link rel="stylesheet" href="/examples/assets/examples.css">
   <script type="importmap">
     {
       "imports": {
-        "@yourbrand/scanner": "/dist/index.js",
+        "@barcodesgg/scanner": "/dist/index.js",
         "barcode-detector/ponyfill": "/node_modules/barcode-detector/dist/es/ponyfill.js"
       }
     }
@@ -34,7 +34,7 @@
   </main>
 
   <script type="module">
-    import { createScanner } from '@yourbrand/scanner';
+    import { createScanner } from '@barcodesgg/scanner';
 
     const errorText = {
       'permission-denied': 'Camera permission was denied.',

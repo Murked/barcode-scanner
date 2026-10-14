@@ -1,7 +1,16 @@
 {
-  "name": "@yourbrand/scanner",
+  "name": "@barcodesgg/scanner",
   "version": "0.1.0",
-  "description": "Drop-in, customizable barcode scanner for websites: headless core, <barcode-scanner> web component and React hook.",
+  "description": "Drop-in barcode scanner for websites — scan-only, or look products up with the Barcodes.gg API. Web component, React hook and headless core.",
+  "author": "Barcodes.gg",
+  "homepage": "https://github.com/Murked/barcode-scanner#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Murked/barcode-scanner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Murked/barcode-scanner/issues"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -30,13 +39,17 @@
   ],
   "keywords": [
     "barcode",
+    "barcode-scanner",
     "scanner",
     "ean",
     "upc",
     "gtin",
+    "camera",
     "barcode-detector",
+    "zxing",
     "web-component",
-    "react"
+    "react",
+    "barcodes.gg"
   ],
   "engines": {
     "node": ">=18"
@@ -85,5 +98,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.2",
     "vitest": "^5.0.4"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

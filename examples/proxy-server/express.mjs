@@ -1,14 +1,13 @@
-// Lookup proxy for `urlLookup('/api/lookup/{barcode}')`.
-// Your server holds the API key; the browser only ever sees a small public preview.
+// Lookup proxy for `urlLookup('/api/lookup/{barcode}')` or `<barcode-scanner lookup-url="/api/lookup/{barcode}">`.
+// Your Barcodes.gg token stays on the server; the browser only sees a small product preview.
 //
-//   npm install express
-//   BARCODES_API_KEY=sk_... node express.mjs
-//
-// API URL and response field names are placeholders — align with the real Barcodes API.
+//   npm install express @barcodesgg/sdk
+//   BARCODES_API_KEY=... node express.mjs
 import express from 'express';
+import { createSdk } from '@barcodesgg/sdk';
 
+const sdk = createSdk({ apiKey: process.env.BARCODES_API_KEY, throwOnApiError: false });
 const app = express();
-const API = process.env.BARCODES_API_URL ?? 'https://api.yourbrand.com/v1/barcodes';
 
 // Simple in-memory rate limit (30 lookups / minute / IP). Use a real limiter in production.
 const hits = new Map();
@@ -23,22 +22,26 @@ app.use('/api/lookup', (req, res, next) => {
 
 app.get('/api/lookup/:barcode', async (req, res) => {
   const { barcode } = req.params;
-  if (!/^[0-9]{8,14}$/.test(barcode)) return res.status(422).json({ message: 'Invalid barcode' });
+  if (!/^[0-9]{8,15}$/.test(barcode)) return res.status(422).json({ message: 'Invalid barcode' });
+  res.set('Cache-Control', 'no-store');
 
   try {
-    const r = await fetch(`${API}/${encodeURIComponent(barcode)}`, {
-      headers: { Authorization: `Bearer ${process.env.BARCODES_API_KEY}` },
-    });
-    res.set('Cache-Control', 'no-store');
-    if (r.status === 404) return res.json({ found: false });
-    if (!r.ok) return res.status(502).json({ message: 'Upstream error' }); // → 'lookup-failed'
-    const p = await r.json();
+    const data = await sdk.barcodes.lookup(barcode, { fields: '*' });
+    if (data.error || !data.product) return res.json({ found: false }); // "Barcode could not be found." etc.
+    const p = data.product;
     res.json({
       found: true,
-      product: { barcode: p.barcode, name: p.name, brand: p.brand, imageUrl: p.image, pageUrl: p.url },
+      product: {
+        barcode,
+        name: p.product_name,
+        brand: p.product_brand,
+        styleCode: p.product_style_code,
+        imageUrl: p.product_image,
+        pageUrl: `https://barcodes.gg/barcode/${barcode}`,
+      },
     });
   } catch {
-    res.status(502).json({ message: 'Upstream unavailable' });
+    res.status(502).json({ message: 'Lookup unavailable' }); // → 'lookup-failed'
   }
 });
 

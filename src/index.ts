@@ -5,4 +5,4 @@ export { createReadConfirmation } from './confirm';
 export { ScannerError } from './errors';
 export type * from './types';
 export type { ScannerErrorCode } from './errors';
-export type { UrlLookupInit, BarcodesLookupOptions } from './lookup';
+export type { UrlLookupInit, BarcodesLookupOptions, BarcodesLookupResponse } from './lookup';

@@ -49,6 +49,8 @@ export const defaultMessages: Messages = {
     'invalid-input': 'Enter a valid barcode.',
     'lookup-failed': 'Lookup is unavailable right now. Please try again.',
     'rate-limited': 'Too many lookups. Please wait a minute.',
+    unauthorized: 'Product lookup is not available right now.',
+    'quota-exceeded': 'Product lookup is not available right now.',
   },
 };
 

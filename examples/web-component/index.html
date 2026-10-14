@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Web component — @yourbrand/scanner</title>
+  <title>Web component — @barcodesgg/scanner</title>
   <link rel="stylesheet" href="/examples/assets/examples.css">
   <!-- No bundler here, so an import map points the package names at the built files.
-       With a bundler you just `import '@yourbrand/scanner/element'`. -->
+       With a bundler you just `import '@barcodesgg/scanner/element'`. -->
   <script type="importmap">
     {
       "imports": {
-        "@yourbrand/scanner": "/dist/index.js",
-        "@yourbrand/scanner/element": "/dist/element/index.js",
+        "@barcodesgg/scanner": "/dist/index.js",
+        "@barcodesgg/scanner/element": "/dist/element/index.js",
         "barcode-detector/ponyfill": "/node_modules/barcode-detector/dist/es/ponyfill.js"
       }
     }
@@ -20,7 +20,8 @@
 <body>
   <main>
     <h1>&lt;barcode-scanner&gt;</h1>
-    <p>Default UI with a proxy lookup and manual entry. Try <code>5012345678900</code>.</p>
+    <p>Default UI with a lookup and manual entry. Uses the local demo endpoint (try <code>5012345678900</code>),
+      or the Barcodes.gg API if you open this page with <code>?token=YOUR_TOKEN</code>.</p>
 
     <!-- wasm-url self-hosts the zxing wasm; omit it to use the jsDelivr CDN default. -->
     <barcode-scanner
@@ -35,9 +36,12 @@
   </main>
 
   <script type="module">
-    import '@yourbrand/scanner/element';
+    import '@barcodesgg/scanner/element';
 
     const el = document.querySelector('barcode-scanner');
+    // ?token=... switches from the demo endpoint to the Barcodes.gg API.
+    const token = new URLSearchParams(location.search).get('token');
+    if (token) el.setAttribute('token', token);
     const log = (line) => { document.getElementById('log').textContent += line + '\n'; };
 
     el.addEventListener('barcode-state', (e) => log(`state     ${e.detail.state}`));
