@@ -80,7 +80,8 @@
     "serve": "node scripts/serve.mjs",
     "size": "size-limit",
     "changeset": "changeset",
-    "release": "npm run build && changeset publish"
+    "release": "npm run build && changeset publish",
+    "prepublishOnly": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
